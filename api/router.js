@@ -1,12 +1,9 @@
 const { Router } = require('express');
 const { 
-  getArticlesByQuery, 
-  getFrontPageArticles 
-} = require('./handlers/hackerNews');
+  getEVData 
+} = require('./handlers/evData');
 
 const router = Router();
-
-router.get('/hn', getFrontPageArticles)
-router.get('/hn/:query', getArticlesByQuery)
+router.get('/ev-data/lat/:lat/lng/:lng', getEVData)
 
 module.exports = router;
