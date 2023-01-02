@@ -11,10 +11,10 @@ const MapContainer = () => {
   const mapRef = useRef();
 
   // Lat, long default values to initialize map center + initializing evChargersData
-  const [latitude, setLatitude] = useState(0);
-  const [longitude, setLongitude] = useState(0);
+  const [latitude, setLatitude] = useState(44.4914);
+  const [longitude, setLongitude] = useState(73.1857);
   const [locationFallback, setLocationFallback] = useState('');
-  const [evChargersData, setEvChargersData ] = useState();
+  const [evChargersData, setEvChargersData ] = useState(seedData);
 
   // Attempt to get user's location with native browser navigation API
   useEffect(() => {
@@ -156,7 +156,7 @@ const MapContainer = () => {
     }
   
     // Determine what should be rendered with this "sentinel" variable...
-  const isMapDataReady = evChargersData && longitude && latitude;
+  const isMapDataReady = evChargersData;
 
   return (
     <>
