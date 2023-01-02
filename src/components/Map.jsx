@@ -18,7 +18,7 @@ const Map = ({mapRef, flyToStore, createPopUp, evChargersData, centerLat, center
       container: 'map',
       style: 'mapbox://styles/mapbox/light-v10',
       center: [centerLong, centerLat],
-      zoom: 12,
+      zoom: 8,
       scrollZoom: false
   });
 
