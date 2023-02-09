@@ -18,11 +18,8 @@ const MapContainer = () => {
 
   // Attempt to get user's location with native browser navigation API
   useEffect(() => {
-    let shouldLocateUser = true;
     getLocation();
-
-    return () => shouldLocateUser = false;
-  })
+  }, [])
 
   // Fetch data from DoE and set state...
   useEffect(() => {
@@ -63,13 +60,16 @@ const MapContainer = () => {
         .then(res => res.json())
         .then(data => {
           const dataEntry = data[`K${locationFallback}`];
+          console.log('logging dataEntry')
+          console.log('logging dataEntry', dataEntry, dataEntry.lon, dataEntry.lat)
+
           setLongitude(dataEntry.lon);
           setLatitude(dataEntry.lat);
         });
     }
 
     return () => shouldUseLocationFallback = false;
-  }, [locationFallback]);
+  }, []);
 
    /*
     Util funcs to handle getting user's location with the browser's native navigator API 
@@ -80,16 +80,16 @@ const MapContainer = () => {
     }
   
     function onGetLocationError() {
-      console.log('Geolocation error!');
+      console.log('Geolocation error! Gonna try CloudFlare...');
       getCloudflareJSON()
           .then((entry) => setLocationFallback(entry.colo));
     }
   
-    function getLocation() {
+    async function getLocation() {
       if (!navigator.geolocation) {
         console.log('Geolocation API not supported by this browser.');
-        getCloudflareJSON()
-          .then((entry) => setLocationFallback(entry.colo));
+        const entry = await getCloudflareJSON();
+        console.log( entry)
   
       } else {
         console.log('Checking location...');
@@ -104,6 +104,7 @@ const MapContainer = () => {
        *output*: JS Object (fetch returns plain text, which is then parsed to js object) or 'undefined'
     */ 
        async function getCloudflareJSON(){
+        console.log('Trying cloudflare...')
         try {
           // Initialize controller because Cloudflare endpoint errors silently and remains "stalled" for a while instead of erroring...
           let controller = new AbortController();
@@ -115,6 +116,7 @@ const MapContainer = () => {
           }
           );
           let data = await res.text();
+          console.log(data)
           let arr = data.trim().split('\n').map(e=>e.split('='))
           return Object.fromEntries(arr)
           } catch(error) {

@@ -5,22 +5,31 @@ import '../App.css';
 mapboxgl.accessToken =
   'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
-const Map = ({mapRef, flyToStore, createPopUp, evChargersData, centerLat, centerLong}) => {
+const Map = ({
+  mapRef, 
+  flyToStore, 
+  createPopUp, 
+  evChargersData, 
+  centerLat, 
+  centerLong
+}) => {
   const mapContainerRef = useRef(null);
   
   const [lng, setLng] = useState(centerLat);
   const [lat, setLat] = useState(centerLong);
   const [zoom, setZoom] = useState(2.5);
 
+  console.log(lat, lng)
+
   // Initialize map when component mounts
   useEffect(() => {
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/light-v10',
-      center: [centerLong, centerLat],
-      zoom: 8,
+      center: [-80.2906036377, 25.7931995392],
+      zoom: 4,
       scrollZoom: false
-  });
+  }, []);
 
     mapRef.current = map;
 
