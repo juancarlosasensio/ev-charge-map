@@ -15,6 +15,10 @@ const getEVData = async (req, res) => {
       method : 'GET'
     });
     const data = await response.json(); 
+
+    if (data) {
+      console.log(`Got DOE data for lat: ${lat}, lng: ${lng}`)
+    }
     
     res.status(200).json(data);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { evChargers as seedData } from '../utils/globalConstants';
 import { formattedPhone } from '../utils/functions';
@@ -16,10 +16,36 @@ const MapContainer = () => {
   const [locationFallback, setLocationFallback] = useState('');
   const [evChargersData, setEvChargersData ] = useState(seedData);
 
+  const getLocation = useCallback(async function getLocation() {
+      if (!navigator.geolocation) {
+        console.log('Geolocation API not supported by this browser.');
+        const entry = await getCloudflareJSON();
+        console.log( entry)
+  
+      } else {
+        console.log('Checking location...');
+        navigator.geolocation.getCurrentPosition(onGetLocationSuccess, onGetLocationError);
+      }
+      
+      /*
+        Util funcs to handle getting user's location with the browser's native navigator API 
+      */
+      function onGetLocationSuccess(position) {
+        setLatitude(position.coords.latitude);
+        setLongitude(position.coords.longitude);
+      }
+  
+      function onGetLocationError() {
+        console.log('Geolocation error! Gonna try CloudFlare...');
+        getCloudflareJSON()
+            .then((entry) => setLocationFallback(entry.colo));
+      }
+    }, [])
+
   // Attempt to get user's location with native browser navigation API
   useEffect(() => {
     getLocation();
-  }, [])
+  }, [getLocation])
 
   // Fetch data from DoE and set state...
   useEffect(() => {
@@ -71,68 +97,42 @@ const MapContainer = () => {
     return () => shouldUseLocationFallback = false;
   }, []);
 
-   /*
-    Util funcs to handle getting user's location with the browser's native navigator API 
-  */
-    function onGetLocationSuccess(position) {
-      setLatitude(position.coords.latitude);
-      setLongitude(position.coords.longitude);
-    }
-  
-    function onGetLocationError() {
-      console.log('Geolocation error! Gonna try CloudFlare...');
-      getCloudflareJSON()
-          .then((entry) => setLocationFallback(entry.colo));
-    }
-  
-    async function getLocation() {
-      if (!navigator.geolocation) {
-        console.log('Geolocation API not supported by this browser.');
-        const entry = await getCloudflareJSON();
-        console.log( entry)
-  
-      } else {
-        console.log('Checking location...');
-        navigator.geolocation.getCurrentPosition(onGetLocationSuccess, onGetLocationError);
-      }
-    }
+  /* 
+    Fallback to getting location from Cloudflare if native navigator API is not available: 
+      (1) is not available (user agent settings) or 
+      (2) it fails for some reason 
+    *output*: JS Object (fetch returns plain text, which is then parsed to js object) or 'undefined'
+  */ 
+  async function getCloudflareJSON(){
+  console.log('Trying cloudflare...')
+  try {
+    // Initialize controller because Cloudflare endpoint errors silently and remains "stalled" for a while instead of erroring...
+    let controller = new AbortController();
+    setTimeout(() => controller.abort(), 2000);
 
-       /* 
-       Fallback to getting location from Cloudflare if native navigator API is not available: 
-        (1) is not available (user agent settings) or 
-        (2) it fails for some reason 
-       *output*: JS Object (fetch returns plain text, which is then parsed to js object) or 'undefined'
-    */ 
-       async function getCloudflareJSON(){
-        console.log('Trying cloudflare...')
-        try {
-          // Initialize controller because Cloudflare endpoint errors silently and remains "stalled" for a while instead of erroring...
-          let controller = new AbortController();
-          setTimeout(() => controller.abort(), 2000);
-    
-          // Pass controller's signal to abort after 2 seconds...
-          let res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', {
-            signal: controller.signal
-          }
-          );
-          let data = await res.text();
-          console.log(data)
-          let arr = data.trim().split('\n').map(e=>e.split('='))
-          return Object.fromEntries(arr)
-          } catch(error) {
-            console.log(error);
-    
-            /*
-              If call to Cloudflar fails, 
-              set fallback states to 'seedData' 
-              and (1) prevent app from crashing; (2) display something meaningful to people
-            */
-            setLocationFallback('');
-            setLatitude(seedData.metadata.latitude);
-            setLongitude(seedData.metadata.longitude);
-            setEvChargersData(seedData);
-          }
-        }
+    // Pass controller's signal to abort after 2 seconds...
+    let res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', {
+      signal: controller.signal
+    }
+    );
+    let data = await res.text();
+    console.log(data)
+    let arr = data.trim().split('\n').map(e=>e.split('='))
+    return Object.fromEntries(arr)
+    } catch(error) {
+      console.log(error);
+
+      /*
+        If call to Cloudflar fails, 
+        set fallback states to 'seedData' 
+        and (1) prevent app from crashing; (2) display something meaningful to people
+      */
+      setLocationFallback('');
+      setLatitude(seedData.metadata.latitude);
+      setLongitude(seedData.metadata.longitude);
+      setEvChargersData(seedData);
+    }
+  }
 
   /* 
     Util funcs that rely on MapboxGL methods and this React app's mapRef in order to work...
